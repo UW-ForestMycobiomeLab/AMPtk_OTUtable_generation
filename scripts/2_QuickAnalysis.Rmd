@@ -49,7 +49,7 @@ Get working directory
 working_directory <- getwd()
 
 #unix (linux,mac)
-its_phyloseq <- paste(working_directory, "FungiPhyloseqData.rds", sep="/")
+its_phyloseq <- file.path(working_directory, "results", "phyloseq", "FungiPhyloseqData.rds")
 
 # Windows
 #its_phyloseq <- paste(working_directory, ".rds", sep="\")
@@ -57,26 +57,34 @@ its_phyloseq <- paste(working_directory, "FungiPhyloseqData.rds", sep="/")
 
 Pull in the file
 ```{r}
-Data_Raw <- readRDS(FungiPhyloseqData)
+Data_Raw <- readRDS(its_phyloseq)
 ```
 
 Add in your metadata; We can now add additional metadata (e.g., environmental data) to the phyloseq object.
 
 ```{r}
-metadata<-read_excel("Metadata.xlsx")
+# Read metadata from Excel file
+metadata <- read_excel(file.path(working_directory, "data", "metadata", "Metadata.xlsx"))
 
+# Convert the "Sample" column to row names
 metadata <- metadata %>% 
-    tibble::column_to_rownames("Sample") 
+  tibble::column_to_rownames("Sample")
 
+# Add metadata to the phyloseq object
 sample_data(Data_Raw) <- metadata
 ```
 
 Rarification
 ```{r message=FALSE, warning=FALSE}
-set.seed(5)
-RARE=rarefy_even_depth(Data_Raw, sample.size = 5000)
-save(RARE, file = "RARE.rda")
-load(file = "RARE.rda")
+# Rarefy the data to an even depth
+set.seed(5)  # Set seed for reproducibility
+RARE <- rarefy_even_depth(Data_Raw, sample.size = 5000)
+
+# Save the rarefied object
+save(RARE, file = file.path(working_directory, "results", "phyloseq", "RARE.rda"))
+
+# Load the rarefied object (optional, for demonstration)
+load(file = file.path(working_directory, "results", "phyloseq", "RARE.rda"))
 ```
 
 Ordination (NMDS) using default of bray for distance (bray is default method for ordinate function)
