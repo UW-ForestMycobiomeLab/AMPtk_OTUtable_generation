@@ -1,0 +1,88 @@
+---
+title: "Data Analysis"
+author: "Claire Willing"
+date: "2024-12-10"
+output: html_document
+---
+
+Read in libraries
+```{r warning=FALSE}
+# Function to install and load packages
+install_and_load <- function(packages) {
+  for (pkg in packages) {
+    if (!requireNamespace(pkg, quietly = TRUE)) {
+      if (pkg == "phyloseq") {
+        if (!requireNamespace("BiocManager", quietly = TRUE)) {
+          install.packages("BiocManager")
+        }
+        BiocManager::install(pkg)
+      } else {
+        install.packages(pkg)
+      }
+    }
+    library(pkg, character.only = TRUE)
+  }
+}
+
+# List of required packages
+required_packages <- c(
+  "phyloseq",  # For working with sequencing data
+  "dplyr",     # For data manipulation
+  "ggplot2",   # For plotting
+  "readxl",    # For reading Excel files
+  "writexl",   # For writing Excel files
+  "tibble",    # For converting columns to row names
+  "stringr",   # For string manipulation
+  "viridis",   # For color palettes
+  "vegan",     # For statistics
+  "tidyr",     # For data org
+  "knitr",
+  "lme4",
+  "ggeffects"
+)
+
+# Install and load packages
+install_and_load(required_packages)
+```
+Get working directory
+```{r}
+working_directory <- getwd()
+
+#unix (linux,mac)
+its_phyloseq <- paste(working_directory, "FungiPhyloseqData.rds", sep="/")
+
+# Windows
+#its_phyloseq <- paste(working_directory, ".rds", sep="\")
+```
+
+Pull in the file
+```{r}
+Data_Raw <- readRDS(FungiPhyloseqData)
+```
+
+Add in your metadata; We can now add additional metadata (e.g., environmental data) to the phyloseq object.
+
+```{r}
+metadata<-read_excel("Metadata.xlsx")
+
+metadata <- metadata %>% 
+    tibble::column_to_rownames("Sample") 
+
+sample_data(Data_Raw) <- metadata
+```
+
+Rarification
+```{r message=FALSE, warning=FALSE}
+set.seed(5)
+RARE=rarefy_even_depth(Data_Raw, sample.size = 5000)
+save(RARE, file = "RARE.rda")
+load(file = "RARE.rda")
+```
+
+Ordination (NMDS) using default of bray for distance (bray is default method for ordinate function)
+```{r message=FALSE, warning=FALSE}
+#make sure the variables are factors; replace the NAs with 0s for timepoint
+ORDtotalvals<-ordinate(RARE, "NMDS")
+ORD<-plot_ordination(RARE, ORDtotalvals, color="month")+theme_minimal()
+ORD
+```
